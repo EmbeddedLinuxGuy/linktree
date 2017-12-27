@@ -1,0 +1,25 @@
+{
+  "name": "linktree",
+  "version": "0.0.1",
+  "description": "Link Tree",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo No tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EmbeddedLinuxGuy/linktree.git"
+  },
+  "keywords": [
+    "link"
+  ],
+  "author": "Jesse D Zbikowski",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EmbeddedLinuxGuy/linktree/issues"
+  },
+  "dependencies": {
+    "mysql": ""
+  },
+  "homepage": "https://github.com/EmbeddedLinuxGuy/linktree#readme"
+}
