@@ -19,18 +19,46 @@ select (select title from moz_places
        from moz_historyvisits h`;
 //       where h.from_visit !=0 and h.place_id !=0 `;
 
+
+// return all visits from moz_historyvisits
+var get_all_visits_query = `
+select from_visit, place_id from moz_historyvisits
+`;
+
+// for a given visit, return referring page's visit id
+var get_parent_query = `
+select from_visit, place_id
+       from moz_historyvisits
+       where id=?
+`;
+
 var red = "\033[31m";
 var green = "\033[32m";
 var yellow = "\033[33m";
 
-connection.query(query, function (error, results, fields) {
-    if (error) throw error;
-    for (i=0; i < results.length; i++) {
-	if (results[i].parent_page !== null && results[i].child_page !== null) {
-	    console.log(`${red}${results[i].parent_page} ${green}-> ${yellow}${results[i].child_page}`);
-	    console.log('--');
+var chain_length = function(place_id, from_visit) {
+    console.log(`Chain length for ${place_id} is: ???`);
+    connection.query(get_parent_query, [ from_visit ], function (e, r, f) {
+	if (e) throw e;
+	//	console.log(r[0].from_visit);
+	//	console.log(r.length);
+	if (r.length === 1) {
+//	    console.log("Good entry");
+	} else if (r.length === 0) {
+//	    console.log("Empty entry");
+	} else {
+	    console.log(r.length);
 	}
+    });
+}
+
+connection.query(get_all_visits_query, function (e, r, f) {
+    if (e) throw e;
+    for (i=0; i < r.length; ++i) {
+	console.log(`${r[i].place_id}, ${r[i].from_visit}`);
+	chain_length(r[i].place_id, r[i].from_visit);
     }
 });
 
-connection.end();
+// xxx - after last query, end connection and exit
+//connection.end();
