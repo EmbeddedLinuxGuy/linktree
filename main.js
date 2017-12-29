@@ -22,7 +22,7 @@ select (select title from moz_places
 
 // return all visits from moz_historyvisits
 var get_all_visits_query = `
-select from_visit, place_id from moz_historyvisits
+select id from moz_historyvisits
 `;
 
 // for a given visit, return referring page's visit id
@@ -44,37 +44,44 @@ var extend_chain = function(from_visit) {
 // place_id: place visited; index to moz_places
 // from_visit: referrer; index to moz_historyvisits
 
-// return: length of referrer chain. 0 for no referrers.
-var chain_length = function(place_id, from_visit) {
-//    console.log(`Chain length for ${place_id} is: ???`);
-    connection.query(get_parent_query, [ from_visit ], function (e, r, f) {
-	if (e) throw e;
-	//	console.log(r[0].from_visit);
-	//	console.log(r.length);
-	if (r.length === 1) {
-//	    console.log("Good entry");
-//	    extend_chain();
-	} else if (r.length === 0) {
-	    //	    console.log("Empty entry");
-//	    return 0;
-	} else {
-	    console.log(r.length);
+function get_next_id(the_id, results=[]) {
+    return new Promise(function (resolve, reject) {
+	connection.query(get_parent_query, [the_id], function (e, r, f) {
+	    if (e) { reject([e, results]); return; }
+	    resolve(r);
+	});
+    }).then(function(r) {
+	if (r.length === 0) {
+//	    console.log("WARNING: missing table entry");
+	    return results;
 	}
-	if (--con_count === 0) {
-	    connection.end();
+	if(r[0].from_visit === 0) {
+//	    console.log("Done");
+	    return results;
 	}
+	//recusively call unless id is 0
+	return get_next_id(r[0].from_visit, results.concat(r));
     });
 }
 
-var con_count = 0;
+
+var longest = [];
+
 connection.query(get_all_visits_query, function (e, r, f) {
     if (e) throw e;
     con_count = r.length;
+    let promises = [];
     for (i=0; i < r.length; ++i) {
-//	console.log(`${r[i].place_id}, ${r[i].from_visit}`);
-	chain_length(r[i].place_id, r[i].from_visit);
+	promises.push(get_next_id(r[i].id).then(function(r) {
+	    if (r.length > longest.length) {
+		longest = r;
+		console.log("Longest: " + longest.length);
+	    }
+	}));
     }
+    Promise.all(promises).then(function() {
+	console.log("ALL Done");
+	console.log("Longest: " + JSON.stringify(longest));
+	connection.end();
+    });
 });
-
-// xxx - after last query, end connection and exit
-//connection.end();
